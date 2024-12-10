@@ -1,0 +1,65 @@
+---
+ - name: configure apache httpd on node1 server
+   hosts: node1
+   tasks:
+     - name: install httpd package
+       yum:
+         name: httpd
+         state: present
+     - name: start and enable httpd
+       service:
+         name: httpd
+         state: present
+         enabled: yes
+     - name: download website code
+       shell: wget https://www.free-css.com/assets/files/free-css-templates/download/page291/edu-meeting.zip 
+     - name: extract downloaded file
+       shell: unzip edu-meeting.zip
+     - name: copy all website code into apache home directory
+       shell: cp -rvf templatemo_569_edu_meeting/* /var/www/html/
+ - name: configure apache nginx web server on node2
+   hosts: node2
+   tasks:
+     - name: install nginx package
+       yum:
+         name: nginx
+         state: present
+     - name: start and enable nginx service
+       service:
+         name: nginx
+         state: started
+         enabled: yes
+     - name: download website code
+       shell: wget https://www.free-css.com/assets/files/free-css-templates/download/page290/tourist.zip 
+     - name: extract downloaded file
+       shell: unzip tourist.zip
+     - name: copy all website code into apache home directory
+       shell: cp -rvf travel-agency-html-template/* /usr/share/nginx/html/
+ - name: configure docker container on node3 server
+   hosts: node3
+   tasks:
+     - name: install docker
+       yum:
+         name: docker
+         state: present
+     - name: start and enable docker
+       service:
+         name: docker
+         state: started
+         enabled: yes
+     - name: create docker directory
+       file:
+         path: /opt/Docker
+         state: directory
+     - name: add itadmin into docker primary group
+       shell: usermod -aG docker itadmin
+     - name: transfer docker file to node3
+       copy:
+         src: Dockerfile
+         dest: /opt/Docker/
+     - name: change ownership
+       shell: chown -R itadmin:itadmin /opt/Docker
+     - name: create container image from dockerfile
+       shell: cd /opt/Docker; docker build -t painter .
+     - name: launch container from create docker image
+       shell: docker run -dt --name=con1 -t -p 80:80 painter
